@@ -1,52 +1,133 @@
-#! /bin/bash 
+#! /bin/bash
 
 ##
 # Script for running the Blast-Docker Container
 ##
+usage ()
+{
+cat << EOF
+usage: $0 options
+-c BLAST command to be used
+-q Input FastA file to be used as the query in the BLAST command.
+-d Location of the BLAST database to be mounted into the docker file 
+-s Location of the Sequences to be mounted into the docker file
+-t Target database
+-m manually specify a command to your liking. This is not compatible to
+   any other options 
+EOF
+}
 
-if [ $# -ne 3 ]
-  then
-    echo ""
-    echo 'Usage: docker_run.qbash BLASTDB_PATH INPUT_PATH "BLAST_COMMAND"'
-    echo ""
-    echo "Currently you should use absolute paths - especially when"
-    echo "specifying the query and the database in the BLAST command:"
-    echo "    - the BLAST database will be located at /vol/db/"
-    echo "    - the query sequences will be located at /vol/input/"
-    echo 'e.g. ./docker_run.bash /home/juser/blast/database_dir/ /home/juser/blast/input_dir/ "blastn -query /vol/input/myinput.fasta -db /vol/db/someGenome"'
-    echo ""
-    exit 0;
+# docker image to be used
+DOCKER_IMAGE="pol3waf/bld"
+
+# sample database
+TARGET_DB="16SMicrobial"
+# sample query
+QUERY="small.fasta"
+
+# placeholders for arguments used while starting the docker container
+MOUNT_DB=""
+MOUNT_SEQUENCE=""
+BLAST_COMMAND=""
+
+# set some flags
+BLASTDB_PATH_SPECIFIED=false
+SEQUENCE_PATH_SPECIFIED=false
+QUERY_SPECIFIED=false
+TARGET_DB_SPECIFIED=false
+BLAST_COMMAND_SPECIFIED=false
+MANUAL_COMMAND_SPECIFIED=false
+
+# logfile for debugging
+echo "" > debug.log
+
+# read arguments
+while getopts ':d:s:q:t:c:m:' OPTION
+do
+  case "$OPTION" in
+    d)   BLASTDB_PATH=$OPTARG 
+         BLASTDB_PATH_SPECIFIED=true
+         echo "BLASTDB_PATH set to $BLASTDB_PATH" >> debug.log
+         ;;
+    s)   SEQUENCE_PATH=$OPTARG
+         SEQUENCE_PATH_SPECIFIED=true
+         echo "SEQUENCE_PATH set to $SEQUENCE_PATH" >> debug.log
+         ;;
+    q)   QUERY=$OPTARG
+         QUERY_SPECIFIED=true
+         echo "QUERY set to $QUERY" >> debug.log
+         ;;
+    t)   TARGET_DB=$OPTARG
+         TARGET_DB_SPECIFIED=true
+         echo "TARGET_DB set to $TARGET_DB" >> debug.log
+         ;;
+    c)   BLAST_COMMAND=$OPTARG
+         BLAST_COMMAND_SPECIFIED=true
+         echo "BLAST_COMMAND set to $BLAST_COMMAND" >> debug.log
+         ;;
+    m)   MANUAL_COMMAND=$OPTARG
+         MANUAL_COMMAND_SPECIFIED=true
+         echo "MANUAL_COMMAND set to $MANUAL_COMMAND" >> debug.log
+         ;;
+    *)   usage
+         exit 1
+         ;;
+  esac
+done
+
+ 
+
+# specify mount statements
+if $BLASTDB_PATH_SPECIFIED
+then
+    MOUNT_DB=" -v $BLASTDB_PATH:/vol/db"
+    echo "MOUNT_DB set to $MOUNT_DB" >> debug.log
 fi
 
-BLASTDB_PATH=$1
-INPUT_PATH=$2
-BLAST_COMMAND=$3
-
-image_name="pol3waf/bld"
-output_dir="/tmp/output"
-
-#mkdir $output_dir
-
-
-if test -f ./Dockerfile
-  then
-    echo "yeah .. the image is there and up to date, so DONT re-build it"
-#    echo "building docker image"
-#    docker build -t $image_name .         # this is for testing
-  else
-    echo "downloading image"
-    docker pull $image_name               # this is for later use ...
+if $SEQUENCE_PATH_SPECIFIED
+then
+   MOUNT_SEQUENCE="-v $SEQUENCE_PATH:/vol/input"
+   echo "MOUNT_SEQUENCE set to $MOUNT_SEQUENCE" >> debug.log
 fi
 
 
-echo "running image"
+# create a new BLAST command
+if $BLAST_COMMAND_SPECIFIED
+then
+    BLAST_COMMAND="$BLAST_COMMAND -query /vol/input/$QUERY -db $TARGET_DB"
+else
+    # some default command whatever other settings
+    BLAST_COMMAND="blastn -query /vol/input/$QUERY -db $TARGET_DB"
+fi
+
+# rewrite BLAST command if there is a manual command for more
+# advanced stuff
+if $MANUAL_COMMAND_SPECIFIED
+then
+    if $BLAST_COMMAND_SPECIFIED
+    then
+#        BLAST_COMMAND=$BLAST_COMMAND$MANUAL_COMMAND # don't use this .. its buggy
+         echo "You are doing it wrong ... the manual option is not compatible"
+         echo "with any other options. Please use either this or the other ones."
+         echo $help
+         exit 1
+    else
+        # This overwrites all other options!
+        BLAST_COMMAND=$MANUAL_COMMAND
+    fi
+fi
+
+
+echo "BLAST_COMMAND set to $BLAST_COMMAND" >> debug.log
+
+
+echo "running image" >> debug.log
 docker run \
     -e "SGE_TASK_LAST=$SGE_TASK_LAST" \
     -e "SGE_TASK_ID=$SGE_TASK_ID" \
     -e "NSLOTS=$NSLOTS" \
-    -v $BLASTDB_PATH:/vol/db \
-    -v $INPUT_PATH:/vol/input/ \
-    $image_name \
+    $MOUNT_DB \
+    $MOUNT_SEQUENCE \
+    $DOCKER_IMAGE \
     $BLAST_COMMAND \
-#    > $output_dir/results.txt
 
