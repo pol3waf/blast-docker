@@ -20,6 +20,9 @@ EOF
 # docker image to be used
 DOCKER_IMAGE="pol3waf/bld"
 
+# startup script to be used within the docker container
+DOCKER_START_SCRIPT="/vol/scripts/startup.bash"
+
 # sample database
 TARGET_DB="16SMicrobial"
 # sample query
@@ -37,12 +40,13 @@ QUERY_SPECIFIED=false
 TARGET_DB_SPECIFIED=false
 BLAST_COMMAND_SPECIFIED=false
 MANUAL_COMMAND_SPECIFIED=false
+PLOT=false
 
 # logfile for debugging
 echo "" > debug.log
 
 # read arguments
-while getopts ':d:s:q:t:c:m:' OPTION
+while getopts ':d:s:q:t:c:m:p' OPTION
 do
   case "$OPTION" in
     d)   BLASTDB_PATH=$OPTARG 
@@ -68,6 +72,9 @@ do
     m)   MANUAL_COMMAND=$OPTARG
          MANUAL_COMMAND_SPECIFIED=true
          echo "MANUAL_COMMAND set to $MANUAL_COMMAND" >> debug.log
+         ;;
+    p)   PLOT=true
+         echo "PLOT set to true" >> debug.log
          ;;
     *)   usage
          exit 1
@@ -107,6 +114,7 @@ then
     if $BLAST_COMMAND_SPECIFIED
     then
 #        BLAST_COMMAND=$BLAST_COMMAND$MANUAL_COMMAND # don't use this .. its buggy
+         echo "FUNCTION DISABLED - DON'T USE ... YET"
          echo "You are doing it wrong ... the manual option is not compatible"
          echo "with any other options. Please use either this or the other ones."
          echo $help
@@ -116,6 +124,18 @@ then
         BLAST_COMMAND=$MANUAL_COMMAND
     fi
 fi
+
+if $PLOT
+then
+    OUTPUT_BLAST="/vol/output/result.blast"
+    OUTPUT_KRONA="/vol/output/result.krona.html"
+
+    PLOT_COMMAND="perl -I /vol/krona/KronaTools-2.4/lib /vol/krona/KronaTools-2.4/scripts/ImportBLAST.pl"
+
+#    BLAST_COMMAND="$PLOT_COMMAND <( $BLAST_COMMAND -outfmt 6 )"
+    BLAST_COMMAND="$BLAST_COMMAND > $OUTPUT_BLAST; $PLOT_COMMAND -o $OUTPUT_KRONA $OUTPUT_BLAST; cat $OUTPUT_KRONA"
+fi
+
 
 
 echo "BLAST_COMMAND set to $BLAST_COMMAND" >> debug.log
@@ -129,5 +149,5 @@ docker run \
     $MOUNT_DB \
     $MOUNT_SEQUENCE \
     $DOCKER_IMAGE \
-    $BLAST_COMMAND \
+    $DOCKER_START_SCRIPT "$BLAST_COMMAND" \
 
