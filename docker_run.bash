@@ -23,6 +23,9 @@ DOCKER_IMAGE="pol3waf/bld"
 # startup script to be used within the docker container
 DOCKER_START_SCRIPT="/vol/scripts/startup.bash"
 
+# debug output
+DEBUG=/vol/output/debug.log
+
 # sample database
 TARGET_DB="16SMicrobial"
 # sample query
@@ -109,6 +112,7 @@ fi
 if $SEQUENCE_PATH_SPECIFIED
 then
    MOUNT_SEQUENCE="-v $SEQUENCE_PATH:/vol/input"
+   MOUNT_OUTPUT="-v $SEQUENCE_PATH:/vol/output"
    echo "MOUNT_SEQUENCE set to $MOUNT_SEQUENCE" >> debug.log
 fi
 
@@ -150,7 +154,7 @@ then
     PLOT_COMMAND="ktImportBLAST"
 
 #    BLAST_COMMAND="$PLOT_COMMAND <( $BLAST_COMMAND -outfmt 6 )"
-    BLAST_COMMAND="$BLAST_COMMAND > $OUTPUT_BLAST; head -5 $OUTPUT_BLAST; $PLOT_COMMAND -o $OUTPUT_KRONA $OUTPUT_BLAST; cat $OUTPUT_KRONA"
+    BLAST_COMMAND="$BLAST_COMMAND > $OUTPUT_BLAST; cat $OUTPUT_BLAST; $PLOT_COMMAND -o $OUTPUT_KRONA $OUTPUT_BLAST"
 fi
 
 
