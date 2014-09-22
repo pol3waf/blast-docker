@@ -41,12 +41,14 @@ TARGET_DB_SPECIFIED=false
 BLAST_COMMAND_SPECIFIED=false
 MANUAL_COMMAND_SPECIFIED=false
 PLOT=false
+SEQUENCE_TOTAL_PATH_SPECIFIED=false
+
 
 # logfile for debugging
 echo "" > debug.log
 
 # read arguments
-while getopts ':d:s:q:t:c:m:p' OPTION
+while getopts ':d:s:q:t:c:m:y:p' OPTION
 do
   case "$OPTION" in
     d)   BLASTDB_PATH=$OPTARG 
@@ -76,13 +78,26 @@ do
     p)   PLOT=true
          echo "PLOT set to true" >> debug.log
          ;;
+    y)   SEQUENCE_TOTAL_PATH=$OPTARG
+         SEQUENCE_TOTAL_PATH_SPECIFIED=true
+         ;;
     *)   usage
          exit 1
          ;;
   esac
 done
 
- 
+
+
+#
+if $SEQUENCE_TOTAL_PATH_SPECIFIED
+then
+    SEQUENCE_PATH=$( dirname $SEQUENCE_TOTAL_PATH )
+    SEQUENCE_PATH_SPECIFIED=true
+    QUERY=$( basename  $SEQUENCE_TOTAL_PATH )
+    QUERY_SPECIFIED=true
+fi
+
 
 # specify mount statements
 if $BLASTDB_PATH_SPECIFIED
