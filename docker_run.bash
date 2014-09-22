@@ -130,10 +130,12 @@ then
     OUTPUT_BLAST="/vol/output/result.blast"
     OUTPUT_KRONA="/vol/output/result.krona.html"
 
-    PLOT_COMMAND="perl -I /vol/krona/KronaTools-2.4/lib /vol/krona/KronaTools-2.4/scripts/ImportBLAST.pl"
+#    PLOT_COMMAND="perl -I /vol/krona/KronaTools-2.4/lib /vol/krona/KronaTools-2.4/scripts/ImportBLAST.pl"
+#    PLOT_COMMAND="/vol/krona/KronaTools-2.4/scripts/ImportBLAST.pl"
+    PLOT_COMMAND="ktImportBLAST"
 
 #    BLAST_COMMAND="$PLOT_COMMAND <( $BLAST_COMMAND -outfmt 6 )"
-    BLAST_COMMAND="$BLAST_COMMAND > $OUTPUT_BLAST; $PLOT_COMMAND -o $OUTPUT_KRONA $OUTPUT_BLAST; cat $OUTPUT_KRONA"
+    BLAST_COMMAND="$BLAST_COMMAND > $OUTPUT_BLAST; head -5 $OUTPUT_BLAST; $PLOT_COMMAND -o $OUTPUT_KRONA $OUTPUT_BLAST; cat $OUTPUT_KRONA"
 fi
 
 
