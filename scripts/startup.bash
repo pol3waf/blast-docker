@@ -13,7 +13,7 @@ bash /vol/scripts/extract_taxonomy.bash
 export PERL5LIB=${PERL5LIB}:/vol/krona/KronaTools-2.4/lib
 export PATH=${PATH}:/vol/krona/KronaTools-2.4/bin
 cd /vol/krona/KronaTools-2.4/
-./install.pl
+./install.pl > /dev/null
 cd /vol/output
 sh -c "$INPUT_COMMAND"
 
