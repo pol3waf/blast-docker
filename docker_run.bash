@@ -34,6 +34,7 @@ QUERY="small.fasta"
 # placeholders for arguments used while starting the docker container
 MOUNT_DB=""
 MOUNT_SEQUENCE=""
+MOUNT_OUTPUT=""
 BLAST_COMMAND=""
 
 # set some flags
@@ -169,6 +170,7 @@ docker run \
     -e "NSLOTS=$NSLOTS" \
     $MOUNT_DB \
     $MOUNT_SEQUENCE \
+    $MOUNT_OUTPUT \
     $DOCKER_IMAGE \
     $DOCKER_START_SCRIPT "$BLAST_COMMAND" \
 
