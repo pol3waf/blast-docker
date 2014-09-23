@@ -145,6 +145,8 @@ then
     fi
 fi
 
+
+# commands for letting krona plot your blast output and joining it together with the blast command
 if $PLOT
 then
     OUTPUT_BLAST="/vol/output/result.blast"
@@ -155,7 +157,7 @@ then
     PLOT_COMMAND="ktImportBLAST"
 
 #    BLAST_COMMAND="$PLOT_COMMAND <( $BLAST_COMMAND -outfmt 6 )"
-    BLAST_COMMAND="$BLAST_COMMAND -outfmt 6 > $OUTPUT_BLAST; cat $OUTPUT_BLAST; $PLOT_COMMAND -o $OUTPUT_KRONA $OUTPUT_BLAST"
+    BLAST_COMMAND="$BLAST_COMMAND -outfmt 6 1>$OUTPUT_BLAST 2>/dev/null; cat $OUTPUT_BLAST; $PLOT_COMMAND -o $OUTPUT_KRONA $OUTPUT_BLAST >/dev/null 2>&1"
 fi
 
 
@@ -164,13 +166,32 @@ echo "BLAST_COMMAND set to $BLAST_COMMAND" >> debug.log
 
 
 echo "running image" >> debug.log
-docker run \
-    -e "SGE_TASK_LAST=$SGE_TASK_LAST" \
-    -e "SGE_TASK_ID=$SGE_TASK_ID" \
-    -e "NSLOTS=$NSLOTS" \
-    $MOUNT_DB \
-    $MOUNT_SEQUENCE \
-    $MOUNT_OUTPUT \
-    $DOCKER_IMAGE \
-    $DOCKER_START_SCRIPT "$BLAST_COMMAND" \
+
+
+
+# here comes the actual Docker stuff ...
+#update the docker image
+docker pull $DOCKER_IMAGE >> debug.log
+
+DOCKER_COMMAND="\
+-e \"SGE_TASK_LAST=$SGE_TASK_LAST\" \
+-e \"SGE_TASK_ID=$SGE_TASK_ID\" \
+-e \"NSLOTS=$NSLOTS\" \
+$MOUNT_DB \
+$MOUNT_SEQUENCE \
+$MOUNT_OUTPUT \
+$DOCKER_IMAGE \
+$DOCKER_START_SCRIPT \"$BLAST_COMMAND\""
+
+echo "DOCKER_COMMAD set to $DOCKER_COMMAND" >> debug.log
+
+sh -c "docker run $DOCKER_COMMAND"
+#    -e "SGE_TASK_LAST=$SGE_TASK_LAST" \
+#    -e "SGE_TASK_ID=$SGE_TASK_ID" \
+#    -e "NSLOTS=$NSLOTS" \
+#    $MOUNT_DB \
+#    $MOUNT_SEQUENCE \
+#    $MOUNT_OUTPUT \
+#    $DOCKER_IMAGE \
+#    $DOCKER_START_SCRIPT "$BLAST_COMMAND" \
 
