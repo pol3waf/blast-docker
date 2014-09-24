@@ -46,8 +46,9 @@ RUN chmod 755 -R /vol
 RUN perl /vol/krona/KronaTools-2.4/install.pl
 
 # remove apt-get cache
-RUN apt-get autoremove
+RUN apt-get clean
 RUN apt-get autoclean
+RUN apt-get autoremove
 
 
 

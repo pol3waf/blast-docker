@@ -171,7 +171,7 @@ echo "running image" >> debug.log
 
 # here comes the actual Docker stuff ...
 #update the docker image
-docker pull $DOCKER_IMAGE >> debug.log
+docker pull $DOCKER_IMAGE >> debug.log 2>&1
 
 DOCKER_COMMAND="\
 -e \"SGE_TASK_LAST=$SGE_TASK_LAST\" \
